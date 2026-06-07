@@ -6,16 +6,15 @@ exports.uploadFile = (req, res) => {
     });
   }
 
-  // Construct the download URL
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
-  const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
+  // With Cloudinary, the file URL is provided directly in req.file.path
+  const fileUrl = req.file.path;
 
   res.status(200).json({
     success: true,
-    message: 'File uploaded successfully',
+    message: 'File securely uploaded to Cloudinary!',
     file: {
       originalName: req.file.originalname,
-      fileName: req.file.filename,
+      fileName: req.file.filename || req.file.public_id,
       mimeType: req.file.mimetype,
       size: req.file.size,
       downloadUrl: fileUrl

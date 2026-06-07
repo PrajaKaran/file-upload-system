@@ -1,15 +1,31 @@
 const multer = require('multer');
-const path = require('path');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
+require('dotenv').config();
 
-// Configure storage
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'public/uploads/');
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Configure Cloudinary Storage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    // Determine the resource type based on mime type
+    let resourceType = 'image';
+    if (file.mimetype === 'application/pdf') {
+      resourceType = 'raw'; // Cloudinary handles PDFs as 'raw' or 'image'. We'll use 'raw' for direct downloads or 'image' if we want rasterization. Let's use 'auto'.
+    }
+    
+    return {
+      folder: 'file-upload-system',
+      resource_type: 'auto',
+      public_id: Date.now() + '-' + Math.round(Math.random() * 1E9) + '-' + file.originalname.split('.')[0]
+    };
   },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
 });
 
 // File filter for images and PDFs
