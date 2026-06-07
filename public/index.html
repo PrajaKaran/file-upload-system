@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellar File Upload</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-gradient-start: #0f172a;
+            --bg-gradient-end: #1e293b;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Abstract background shapes */
+        .bg-shape {
+            position: absolute;
+            filter: blur(80px);
+            z-index: -1;
+            border-radius: 50%;
+        }
+        .shape-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(99, 102, 241, 0.3);
+            top: -100px;
+            left: -100px;
+            animation: float 10s infinite alternate ease-in-out;
+        }
+        .shape-2 {
+            width: 500px;
+            height: 500px;
+            background: rgba(236, 72, 153, 0.2);
+            bottom: -150px;
+            right: -100px;
+            animation: float 12s infinite alternate-reverse ease-in-out;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(30px, 50px) scale(1.1); }
+        }
+
+        .upload-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 40px;
+            width: 450px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .upload-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 600;
+            background: linear-gradient(to right, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 15px;
+            font-weight: 300;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--card-border);
+            border-radius: 16px;
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.02);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--primary-color);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .drop-zone-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .drop-zone-text {
+            font-size: 16px;
+            color: var(--text-main);
+            margin-bottom: 5px;
+        }
+
+        .drop-zone-hint {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Hide the actual file input */
+        #fileInput {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .selected-file {
+            margin-top: 15px;
+            font-size: 14px;
+            color: var(--primary-color);
+            font-weight: 600;
+            word-break: break-all;
+            display: none;
+        }
+
+        .btn-upload {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 25px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+        }
+
+        .btn-upload:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-upload:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #result {
+            margin-top: 25px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        #result.show {
+            opacity: 1;
+        }
+
+        .success-box {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .error-box {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .success { color: var(--success-color); font-weight: 600; margin-bottom: 5px; }
+        .error { color: var(--error-color); font-weight: 600; margin-bottom: 5px; }
+
+        .download-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: background 0.3s ease;
+            word-break: break-all;
+        }
+
+        .download-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- Background Decorations -->
+<div class="bg-shape shape-1"></div>
+<div class="bg-shape shape-2"></div>
+
+<div class="upload-card">
+    <h2>Secure Cloud Upload</h2>
+    <p class="subtitle">Upload your images or PDF documents seamlessly.</p>
+    
+    <form id="uploadForm">
+        <div class="drop-zone" id="dropZone">
+            <span class="drop-zone-icon">☁️</span>
+            <div class="drop-zone-text">Drag & drop your file here</div>
+            <div class="drop-zone-hint">or click to browse from your computer</div>
+            <input type="file" id="fileInput" name="file" accept="image/jpeg, image/png, image/gif, application/pdf" required>
+        </div>
+        
+        <div class="selected-file" id="selectedFile"></div>
+
+        <button type="submit" id="submitBtn" class="btn-upload">
+            <span id="btnText">Upload File</span>
+            <div class="spinner" id="spinner"></div>
+        </button>
+    </form>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    const form = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const selectedFileDiv = document.getElementById('selectedFile');
+    const resultDiv = document.getElementById('result');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const spinner = document.getElementById('spinner');
+
+    // Handle Drag & Drop styling
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        let dt = e.dataTransfer;
+        let files = dt.files;
+        fileInput.files = files;
+        updateFileName();
+    });
+
+    fileInput.addEventListener('change', updateFileName);
+
+    function updateFileName() {
+        if (fileInput.files.length > 0) {
+            selectedFileDiv.textContent = 'Selected: ' + fileInput.files[0].name;
+            selectedFileDiv.style.display = 'block';
+        } else {
+            selectedFileDiv.style.display = 'none';
+        }
+        // Reset result box when new file is picked
+        resultDiv.classList.remove('show');
+        resultDiv.innerHTML = '';
+    }
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        // UI Loading State
+        submitBtn.disabled = true;
+        btnText.style.display = 'none';
+        spinner.style.display = 'block';
+        resultDiv.classList.remove('show');
+        resultDiv.className = ''; // reset classes
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            // Small artificial delay to show off the loading animation 
+            // (Remove this in real production, it's just for the WOW factor!)
+            await new Promise(r => setTimeout(r, 800)); 
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                resultDiv.innerHTML = `
+                    <div class="success">✨ Upload Successful!</div>
+                    <a href="${data.file.downloadUrl}" target="_blank" class="download-link">
+                        ${data.file.fileName}
+                    </a>
+                `;
+                resultDiv.classList.add('success-box');
+                // Reset file input
+                fileInput.value = '';
+                selectedFileDiv.style.display = 'none';
+            } else {
+                resultDiv.innerHTML = `<div class="error">⚠️ ${data.message}</div>`;
+                resultDiv.classList.add('error-box');
+            }
+        } catch (error) {
+            resultDiv.innerHTML = `<div class="error">⚠️ Server error. Please try again.</div>`;
+            resultDiv.classList.add('error-box');
+        } finally {
+            // Reset Button State
+            resultDiv.classList.add('show');
+            submitBtn.disabled = false;
+            btnText.style.display = 'block';
+            spinner.style.display = 'none';
+        }
+    });
+</script>
+
+</body>
+</html>
